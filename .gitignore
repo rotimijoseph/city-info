@@ -1,0 +1,14 @@
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# .NET build files
+bin/
+obj/
+
+# User-specific files
+.vs/
+.vscode/
