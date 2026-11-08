@@ -5,10 +5,34 @@
 *.sqlite
 *.sqlite3
 
-# .NET build files
+# .NET build output
 bin/
 obj/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
 
-# User-specific files
+# Visual Studio / VS Code user-specific files
 .vs/
 .vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet packages
+*.nupkg
+*.snupkg
+
+# .NET generated files
+project.lock.json
+artifacts/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.log

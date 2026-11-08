@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Cities.Client/">
+    <Project Path="Cities.Client/Cities.Client.Shared/Cities.Client.Shared.csproj" />
+    <Project Path="Cities.Client/Cities.Client.Web/Cities.Client.Web.csproj" />
+    <Project Path="Cities.Client/Cities.Client/Cities.Client.csproj" />
+  </Folder>
+  <Project Path="cityInfoApi.csproj" />
+</Solution>

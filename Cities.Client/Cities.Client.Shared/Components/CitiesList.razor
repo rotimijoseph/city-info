@@ -1,0 +1,68 @@
+﻿@using System.Net.Http.Json
+@inject HttpClient Http
+
+@page "/cities"
+
+<h3>Explore Cities</h3>
+
+@if (cities == null)
+{
+    <p>Loading cities...</p>
+}
+else if (cities.Count == 0)
+{
+    <p>No cities found.</p>
+}
+else
+{
+    @foreach (var city in cities)
+    {
+        <div class="card mb-3 p-3">
+            <h4>@city.Name</h4>
+            <p>@city.Description</p>
+            <p>City ID: @city.Id</p>
+
+            <h5>Points of Interest</h5>
+
+            @if (city.PointsOfInterest.Count == 0)
+            {
+                <p>No points of interest yet.</p>
+            }
+            else
+            {
+                @foreach (var point in city.PointsOfInterest)
+                {
+                    <div class="border rounded p-2 mb-2">
+                        <h6>@point.Name</h6>
+                        <p>@point.Description</p>
+                        <small>ID: @point.Id</small>
+                    </div>
+                }
+            }
+        </div>
+    }
+}
+
+@code {
+    private List<City>? cities;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cities = await Http.GetFromJsonAsync<List<City>>("api/cities");
+    }
+
+    public class City
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public List<PointOfInterest> PointsOfInterest { get; set; } = new();
+    }
+
+    public class PointOfInterest
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+    }
+}

@@ -1,0 +1,111 @@
+﻿@page "/add-city"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h3>Add a New City</h3>
+
+<hr />
+
+<div class="card p-4">
+
+    <div class="mb-3">
+        <label class="form-label">City Name</label>
+
+        <input class="form-control"
+               @bind="newCityName"
+               placeholder="Enter city name" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">City Description</label>
+
+        <textarea class="form-control"
+                  @bind="newCityDescription"
+                  placeholder="Enter city description"
+                  rows="4">
+        </textarea>
+    </div>
+
+    <button class="btn btn-primary"
+            @onclick="SaveCity"
+            disabled="@isSaving">
+
+        @(isSaving ? "Adding..." : "Add City")
+
+    </button>
+
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        @errorMessage
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-3">
+        @successMessage
+    </div>
+}
+
+@code {
+
+    private string newCityName = "";
+    private string newCityDescription = "";
+
+    private bool isSaving = false;
+
+    private string? errorMessage;
+    private string? successMessage;
+
+    private async Task SaveCity()
+    {
+        if (string.IsNullOrWhiteSpace(newCityName))
+        {
+            errorMessage = "Please enter a city name.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var newCity = new
+            {
+                Name = newCityName.Trim(),
+                Description = newCityDescription.Trim()
+            };
+
+            var response = await Http.PostAsJsonAsync(
+                "api/cities",
+                newCity
+            );
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "City added successfully!";
+
+                newCityName = "";
+                newCityDescription = "";
+            }
+            else
+            {
+                errorMessage = "Failed to add city. " +
+                    await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Something went wrong: " + ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

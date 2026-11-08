@@ -15,5 +15,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
   </ItemGroup>
-
+<ItemGroup>
+    <Compile Remove="Cities.Client/**/*.cs" />
+    <Content Remove="Cities.Client/**/*" />
+    <None Remove="Cities.Client/**/*" />
+</ItemGroup>
 </Project>

@@ -1,51 +1,3 @@
-// using System;
-// using System.Reflection.Metadata.Ecma335;
-// using cityInfoApi.Models;
-// using Microsoft.AspNetCore.Mvc;
-
-// namespace cityInfoApi.Controllers;
-
-// // JSON result is action result which formats given object as JSON 
-
-// [ApiController] // requiring a certain type of routing 
-// [Route("api/[controller]")] // matches first part of controller i.e., cities
-// public class CitiesController : ControllerBase
-// {
-//     [HttpGet]
-//     // public JsonResult GetCities()
-//     // {
-//     //     return new JsonResult(CitiesDataStore.Current.Cities);
-//     // }
-
-//     public ActionResult<IEnumerable<CityDto>> GetCities()
-//     // result - of controller - action 
-//     {
-//         return Ok(CitiesDataStore.Current.Cities);
-//     }
-    
-//     [HttpGet("{id}")]
-
-//     // public JsonResult GetCity(int id)
-//     // {
-//     //     return new JsonResult(CitiesDataStore.Current.Cities.FirstOrDefault(c => c.Id == id));
-//     // }
-
-//     public ActionResult<CityDto> GetCity(int id)
-//     {
-//         // find the cirt
-//         var cityToReturn = CitiesDataStore.Current.Cities
-//             .FirstOrDefault(c => c.Id == id);
-
-//         if (cityToReturn == null)
-//         {
-//             return NotFound();
-//         }
-
-//         return Ok(cityToReturn);
-//     }
-// }
-
-
 using cityInfoApi.Data;
 using cityInfoApi.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -66,18 +18,47 @@ public class CitiesController : ControllerBase
 
     // GET: api/cities
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<City>>> GetCities()
+    public async Task<ActionResult<IEnumerable<CityDetailsDto>>> GetCities()
     {
-        var cities = await _context.Cities.ToListAsync();
+        var cities = await _context.Cities
+            .Select(city => new CityDetailsDto
+            {
+                Id = city.Id,
+                Name = city.Name,
+                Description = city.Description,
+                PointsOfInterest = city.PointsOfInterest
+                    .Select(point => new PointOfInterestDto
+                    {
+                        Id = point.Id,
+                        Name = point.Name,
+                        Description = point.Description
+                    }).ToList()
+            })
+            .ToListAsync();
 
         return Ok(cities);
     }
 
     // GET: api/cities/1
     [HttpGet("{id}")]
-    public async Task<ActionResult<City>> GetCity(int id)
+    public async Task<ActionResult<CityDetailsDto>> GetCity(int id)
     {
-        var city = await _context.Cities.FindAsync(id);
+        var city = await _context.Cities
+            .Where(c => c.Id == id)
+            .Select(city => new CityDetailsDto
+            {
+                Id = city.Id,
+                Name = city.Name,
+                Description = city.Description,
+                PointsOfInterest = city.PointsOfInterest
+                    .Select(point => new PointOfInterestDto
+                    {
+                        Id = point.Id,
+                        Name = point.Name,
+                        Description = point.Description
+                    }).ToList()
+            })
+            .FirstOrDefaultAsync();
 
         if (city == null)
         {
@@ -89,9 +70,12 @@ public class CitiesController : ControllerBase
 
     // POST: api/cities
     [HttpPost]
-    public async Task<ActionResult<City>> CreateCity(City city)
-    {
+public async Task<ActionResult<CityDetailsDto>> CreateCity(City city)    {
         city.Id = 0;
+
+        // Do not allow clients to attach existing points of interest
+        // while creating a city through this endpoint.
+        city.PointsOfInterest = new List<PointOfInterest>();
 
         _context.Cities.Add(city);
 
@@ -100,6 +84,11 @@ public class CitiesController : ControllerBase
         return CreatedAtAction(
             nameof(GetCity),
             new { id = city.Id },
-            city);
+            new CityDetailsDto
+            {
+                Id = city.Id,
+                Name = city.Name,
+                Description = city.Description
+            });
     }
 }

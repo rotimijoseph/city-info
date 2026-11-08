@@ -1,93 +1,111 @@
-using System.Drawing;
+using cityInfoApi.Data;
 using cityInfoApi.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-namespace cityInfoApi.Controllers
+namespace cityInfoApi.Controllers;
+
+[ApiController]
+[Route("api/cities/{cityId}/[controller]")]
+public class PointsOfInterestController : ControllerBase
 {
-    [Route("api/cities/{cityId}/[controller]")]
-    [ApiController]
-    public class PointsOfInterestController : ControllerBase
+    private readonly CityInfoContext _context;
+
+    public PointsOfInterestController(CityInfoContext context)
     {
-        [HttpGet]
-        public ActionResult<IEnumerable<PointOfInterestDto>> GetPointsOfInterest(int cityId)
+        _context = context;
+    }
+
+    // GET: api/cities/1/pointsOfInterest
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<PointOfInterestDto>>>
+        GetPointsOfInterest(int cityId)
+    {
+        var cityExists = await _context.Cities
+            .AnyAsync(c => c.Id == cityId);
+
+        if (!cityExists)
         {
-            var city = CitiesDataStore.Current.Cities.FirstOrDefault(c => c.Id == cityId);
-
-            if (city == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(city.PointsOfInterest);
+            return NotFound();
         }
 
-        [HttpGet("{pointofinterestid}", Name = "GetPointOfInterest")]
+        var points = await _context.PointsOfInterest
+            .Where(p => p.CityId == cityId)
+            .Select(p => new PointOfInterestDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description
+            })
+            .ToListAsync();
 
-        public ActionResult<PointOfInterestDto> GetPointOfInterest(int cityId, int pointOfInterestId)
+        return Ok(points);
+    }
+
+    // GET: api/cities/1/pointsOfInterest/1
+    [HttpGet("{pointOfInterestId}", Name = "GetPointOfInterest")]
+    public async Task<ActionResult<PointOfInterestDto>>
+        GetPointOfInterest(int cityId, int pointOfInterestId)
+    {
+        var point = await _context.PointsOfInterest
+            .Where(p => p.CityId == cityId &&
+                        p.Id == pointOfInterestId)
+            .Select(p => new PointOfInterestDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description
+            })
+            .FirstOrDefaultAsync();
+
+        if (point == null)
         {
-            var city = CitiesDataStore.Current.Cities.FirstOrDefault(c => c.Id == cityId);
-
-            if (city == null)
-            {
-                return NotFound();
-            }
-
-            // find point of interest
-            var pointOfInterest = city.PointsOfInterest.FirstOrDefault(c => c.Id == pointOfInterestId);
-            if (pointOfInterest == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(pointOfInterest);
+            return NotFound();
         }
 
-        [HttpPost]
-        public ActionResult<PointOfInterestDto> CreatePointOfInterest(
-            int cityId, 
+        return Ok(point);
+    }
+
+    // POST: api/cities/1/pointsOfInterest
+    [HttpPost]
+    public async Task<ActionResult<PointOfInterestDto>>
+        CreatePointOfInterest(
+            int cityId,
             PointOfInterestForCreationDto pointOfInterest)
+    {
+        var cityExists = await _context.Cities
+            .AnyAsync(c => c.Id == cityId);
+
+        if (!cityExists)
         {
-
-            // checking the rules applied in the PointOfInterestForCreationDto are adhered to
-            // dictionary 
-            // but this is not actually needed as happens anyway??? 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest();
-            }
-
-
-            var city = CitiesDataStore.Current.Cities.FirstOrDefault(c => c.Id == cityId);
-            if (city == null)
-            {
-                return NotFound();
-            }
-
-            // calculating for id
-            var maxPoinOfInterestId = CitiesDataStore.Current.Cities.SelectMany(
-                c => c.PointsOfInterest).Max(p => p.Id);
-            
-            // need to map to point of interest dto
-            var finalPointOfInterest = new PointOfInterestDto()
-            {
-                Id = ++maxPoinOfInterestId,
-                Name = pointOfInterest.Name,
-                Description = pointOfInterest.Description
-            };
-
-            city.PointsOfInterest.Add(finalPointOfInterest);
-            
-            return CreatedAtRoute("GetPointOfInterest", 
-                new
-                {
-                    cityId = cityId, 
-                    pointOfInterestId = finalPointOfInterest.Id
-
-                },
-                finalPointOfInterest
-            );
+            return NotFound();
         }
-        
+
+        var finalPoint = new PointOfInterest
+        {
+            Name = pointOfInterest.Name,
+            Description = pointOfInterest.Description,
+            CityId = cityId
+        };
+
+        _context.PointsOfInterest.Add(finalPoint);
+
+        await _context.SaveChangesAsync();
+
+        var result = new PointOfInterestDto
+        {
+            Id = finalPoint.Id,
+            Name = finalPoint.Name,
+            Description = finalPoint.Description
+        };
+
+        return CreatedAtRoute(
+            "GetPointOfInterest",
+            new
+            {
+                cityId = cityId,
+                pointOfInterestId = finalPoint.Id
+            },
+            result);
     }
 }
