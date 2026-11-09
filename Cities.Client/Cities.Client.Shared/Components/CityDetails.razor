@@ -1,0 +1,198 @@
+﻿@page "/cities/{Id:int}"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>City Details - City Explorer</PageTitle>
+
+@if (isLoading)
+{
+    <p class="loading-message">Loading city details...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (city != null)
+{
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">CITY EXPLORER / CITY DETAILS</p>
+            <h1>@city.Name</h1>
+            <p class="page-description">
+                @city.Description
+            </p>
+        </div>
+        <a href="/cities" class="btn btn-outline-success">← All Cities</a>
+    </div>
+
+    <section class="content-card">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">EXPLORE</p>
+                <h2>Points of Interest</h2>
+            </div>
+            <span class="count-pill">@city.PointsOfInterest.Count places</span>
+        </div>
+
+        @if (city.PointsOfInterest.Count == 0)
+        {
+            <p class="empty-message">
+                There are no points of interest for this city yet.
+                Add the first one below.
+            </p>
+        }
+        else
+        {
+            <div class="poi-grid">
+                @foreach (var point in city.PointsOfInterest)
+                {
+                    <article class="poi-card" @key="point.Id">
+                        <div class="poi-icon">⌖</div>
+                        <div>
+                            <h3>@point.Name</h3>
+                            <p>@point.Description</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="content-card add-point-card">
+        <p class="eyebrow">GROW YOUR CITY GUIDE</p>
+        <h2>Add a Point of Interest</h2>
+        <p class="form-description">
+            Add a landmark, attraction or place worth visiting.
+        </p>
+
+        <div class="form-group mb-3">
+            <label for="pointName">Place name</label>
+            <input id="pointName"
+                   class="form-control"
+                   @bind="newPoint.Name"
+                   placeholder="e.g. Central Museum" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="pointDescription">Description</label>
+            <textarea id="pointDescription"
+                      class="form-control"
+                      @bind="newPoint.Description"
+                      rows="3"
+                      placeholder="Tell us a little about this place..."></textarea>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(formMessage))
+        {
+            <p class="form-message">@formMessage</p>
+        }
+
+        <button class="btn btn-green"
+                @onclick="AddPointOfInterest"
+                disabled="@isSaving">
+            @(isSaving ? "Adding..." : "＋ Add Place")
+        </button>
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private City? city;
+    private bool isLoading = true;
+    private bool isSaving;
+    private string? errorMessage;
+    private string? formMessage;
+
+    private NewPointOfInterest newPoint = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadCity();
+    }
+
+    private async Task LoadCity()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            city = await Http.GetFromJsonAsync<City>($"api/cities/{Id}");
+
+            if (city == null)
+            {
+                errorMessage = "The requested city could not be found.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Could not load this city: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task AddPointOfInterest()
+    {
+        formMessage = null;
+
+        if (string.IsNullOrWhiteSpace(newPoint.Name))
+        {
+            formMessage = "Please enter a place name.";
+            return;
+        }
+
+        isSaving = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                $"api/cities/{Id}/pointsOfInterest",
+                newPoint);
+
+            if (response.IsSuccessStatusCode)
+            {
+                newPoint = new NewPointOfInterest();
+                formMessage = "Place added successfully!";
+                await LoadCity();
+            }
+            else
+            {
+                formMessage = $"Could not add the place. API response: {(int)response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            formMessage = $"Something went wrong: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    public class City
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+        public List<PointOfInterest> PointsOfInterest { get; set; } = new();
+    }
+
+    public class PointOfInterest
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+    }
+
+    public class NewPointOfInterest
+    {
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+    }
+}
