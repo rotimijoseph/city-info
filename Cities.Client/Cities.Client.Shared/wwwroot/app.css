@@ -682,3 +682,19 @@ main {
     font-size: 12px;
     line-height: 1.5;
 }
+
+.delete-city-area {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #e5eae6;
+}
+
+.delete-warning {
+    color: #a33b3b;
+    margin-bottom: 12px;
+}
+
+.delete-city-area button {
+    margin-right: 8px;
+    margin-bottom: 8px;
+}

@@ -70,25 +70,43 @@ public class CitiesController : ControllerBase
 
     // POST: api/cities
     [HttpPost]
-public async Task<ActionResult<CityDetailsDto>> CreateCity(City city)    {
-        city.Id = 0;
+    public async Task<ActionResult<CityDetailsDto>> CreateCity(City city)    {
+            city.Id = 0;
 
-        // Do not allow clients to attach existing points of interest
-        // while creating a city through this endpoint.
-        city.PointsOfInterest = new List<PointOfInterest>();
+            // Do not allow clients to attach existing points of interest
+            // while creating a city through this endpoint.
+            city.PointsOfInterest = new List<PointOfInterest>();
 
-        _context.Cities.Add(city);
+            _context.Cities.Add(city);
+
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(
+                nameof(GetCity),
+                new { id = city.Id },
+                new CityDetailsDto
+                {
+                    Id = city.Id,
+                    Name = city.Name,
+                    Description = city.Description
+                });
+        }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteCity(int id)
+    {
+        var city = await _context.Cities
+            .FindAsync(id);
+
+        if (city == null)
+        {
+            return NotFound();
+        }
+
+        _context.Cities.Remove(city);
 
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(
-            nameof(GetCity),
-            new { id = city.Id },
-            new CityDetailsDto
-            {
-                Id = city.Id,
-                Name = city.Name,
-                Description = city.Description
-            });
+        return NoContent();
     }
 }

@@ -1,7 +1,7 @@
 ﻿@page "/cities/{Id:int}"
 @using System.Net.Http.Json
 @inject HttpClient Http
-
+@inject NavigationManager Navigation
 <PageTitle>City Details - City Explorer</PageTitle>
 
 @if (isLoading)
@@ -93,6 +93,38 @@ else if (city != null)
             @(isSaving ? "Adding..." : "＋ Add Place")
         </button>
     </section>
+
+    <div class="delete-city-area">
+    @if (!isConfirmingDelete)
+    {
+        <button class="btn btn-outline-danger"
+                @onclick="() => isConfirmingDelete = true">
+            Delete City
+        </button>
+    }
+    else
+    {
+        <p class="delete-warning">
+            Are you sure? This will also delete all points of interest
+            belonging to this city.
+        </p>
+
+        <button class="btn btn-danger"
+                @onclick="DeleteCityAsync">
+            Yes, delete city
+        </button>
+
+        <button class="btn btn-secondary"
+                @onclick="() => isConfirmingDelete = false">
+            Cancel
+        </button>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(deleteError))
+    {
+        <p class="text-danger">@deleteError</p>
+    }
+    </div>
 }
 
 @code {
@@ -195,4 +227,34 @@ else if (city != null)
         public string Name { get; set; } = "";
         public string? Description { get; set; }
     }
+
+    private bool isConfirmingDelete = false;
+    private string deleteError = string.Empty;
+
+    private async Task DeleteCityAsync()
+{
+    try
+    {
+        deleteError = string.Empty;
+
+        var response = await Http.DeleteAsync($"api/cities/{Id}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/cities");
+        }
+        else
+        {
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            deleteError =
+                $"Delete failed. Status: {(int)response.StatusCode} " +
+                $"{response.StatusCode}. Details: {responseBody}";
+        }
+    }
+    catch (Exception ex)
+    {
+        deleteError = $"Error: {ex.Message}";
+    }
+}
 }
