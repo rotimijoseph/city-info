@@ -216,3 +216,11 @@ The general flow of the application is:
 6. The frontend displays the response to the user.
 
 The shared frontend project allows the Web and MAUI applications to reuse the same Razor components instead of maintaining two separate user interfaces.
+
+Features coming soon:
+- Offline capability
+- Search and filtering
+- Favourites
+- Images
+- Maps
+- User accounts
