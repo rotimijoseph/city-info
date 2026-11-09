@@ -11,7 +11,7 @@ builder.Services.AddScoped(sp =>
     var client = sp.GetRequiredService<IHttpClientFactory>()
         .CreateClient();
 
-    client.BaseAddress = new Uri("http://localhost:5275/");
+    client.BaseAddress = new Uri("http://localhost:5000/");
     return client;
 });
 
