@@ -1,14 +1,148 @@
-﻿@page "/"
-@using Cities.Client.Shared.Services
-@inject IFormFactor FormFactor
+﻿ @page "/"
+@using System.Net.Http.Json
+@inject HttpClient Http
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Home - City Explorer</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="home-page">
 
-Welcome to your new app running on <em>@factor</em> using <em>@platform</em>.
+    @* Welcome banner *@
+    <section class="welcome-banner">
+        <div class="welcome-content">
+            <p class="welcome-eyebrow">WELCOME TO CITY EXPLORER</p>
+            <h1>Discover your next city.</h1>
+            <p>
+                Explore destinations, discover interesting places
+                and build your own city guide.
+            </p>
+
+            <a href="/cities" class="welcome-button">
+                Explore cities →
+            </a>
+        </div>
+
+        <div class="welcome-decoration">
+            <span>⌖</span>
+        </div>
+    </section>
+
+    @* Statistics *@
+    <section class="dashboard-section">
+        <div class="dashboard-heading">
+            <div>
+                <p class="eyebrow">YOUR COLLECTION</p>
+                <h2>Overview</h2>
+            </div>
+        </div>
+
+        @if (isLoading)
+        {
+            <p class="dashboard-message">Loading your statistics...</p>
+        }
+        else if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-warning">
+                Could not load statistics: @errorMessage
+            </div>
+        }
+        else
+        {
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">▦</div>
+                    <p class="stat-label">Total Cities</p>
+                    <h3>@totalCities</h3>
+                    <p class="stat-description">Cities in your collection</p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">⌖</div>
+                    <p class="stat-label">Points of Interest</p>
+                    <h3>@totalPointsOfInterest</h3>
+                    <p class="stat-description">Places worth discovering</p>
+                </div>
+            </div>
+        }
+    </section>
+
+    @* Quick actions *@
+    <section class="dashboard-section">
+        <div class="dashboard-heading">
+            <div>
+                <p class="eyebrow">GET STARTED</p>
+                <h2>Quick actions</h2>
+            </div>
+        </div>
+
+        <div class="actions-grid">
+            <a href="/cities" class="action-card">
+                <div class="action-icon">▦</div>
+                <div>
+                    <h3>Browse Cities</h3>
+                    <p>Explore all the cities in your collection.</p>
+                </div>
+                <span class="action-arrow">→</span>
+            </a>
+
+            <a href="/add-city" class="action-card">
+                <div class="action-icon">＋</div>
+                <div>
+                    <h3>Add a City</h3>
+                    <p>Add a new destination to your collection.</p>
+                </div>
+                <span class="action-arrow">→</span>
+            </a>
+        </div>
+    </section>
+
+</div>
 
 @code {
-    private string factor => FormFactor.GetFormFactor();
-    private string platform => FormFactor.GetPlatform();
+    private int totalCities;
+    private int totalPointsOfInterest;
+
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var cities = await Http.GetFromJsonAsync<List<City>>(
+                "api/cities");
+
+            if (cities != null)
+            {
+                totalCities = cities.Count;
+
+                totalPointsOfInterest = cities.Sum(
+                    city => city.PointsOfInterest.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class City
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+
+        public List<PointOfInterest> PointsOfInterest { get; set; }
+            = new();
+    }
+
+    public class PointOfInterest
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+    }
 }

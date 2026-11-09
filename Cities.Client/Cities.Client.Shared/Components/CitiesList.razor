@@ -17,28 +17,51 @@ else
 {
     @foreach (var city in cities)
     {
-        <div class="card mb-3 p-3">
+        <div class="city-card">
             <h4>@city.Name</h4>
             <p>@city.Description</p>
             <p>City ID: @city.Id</p>
 
             <h5>Points of Interest</h5>
 
-            @if (city.PointsOfInterest.Count == 0)
-            {
-                <p>No points of interest yet.</p>
-            }
-            else
-            {
-                @foreach (var point in city.PointsOfInterest)
+            <div class="city-poi-section">
+                <div class="city-poi-heading">
+                    <h5>Places to explore</h5>
+                    <span class="count-pill">
+                        @city.PointsOfInterest.Count places
+                    </span>
+                </div>
+
+                @if (city.PointsOfInterest.Count == 0)
                 {
-                    <div class="border rounded p-2 mb-2">
-                        <h6>@point.Name</h6>
-                        <p>@point.Description</p>
-                        <small>ID: @point.Id</small>
+                    <p class="empty-message">
+                        No places added to this city yet.
+                    </p>
+                }
+                else
+                {
+                    <div class="city-poi-list">
+                        @foreach (var point in city.PointsOfInterest)
+                        {
+                            <div class="city-poi-item" @key="point.Id">
+                                <div class="city-poi-icon">⌖</div>
+
+                                <div class="city-poi-info">
+                                    <h6>@point.Name</h6>
+
+                                    @if (!string.IsNullOrWhiteSpace(point.Description))
+                                    {
+                                        <p>@point.Description</p>
+                                    }
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
-            }
+            </div>
+            <a href="@($"cities/{city.Id}")" class="btn btn-green">
+                View City →
+            </a>
         </div>
     }
 }
